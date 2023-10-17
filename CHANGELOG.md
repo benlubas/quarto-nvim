@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/quarto-dev/quarto-nvim/compare/v0.17.0...v0.17.1) (2023-10-17)
+
+
+### Bug Fixes
+
+* get current bufnr in ftplugin instead of relying on 0 ([af34813](https://github.com/quarto-dev/quarto-nvim/commit/af3481378ba7b664499fd1bbb9ae5fd6612d04fc))
+
 ## [0.17.0](https://github.com/quarto-dev/quarto-nvim/compare/v0.16.0...v0.17.0) (2023-09-08)
 
 
