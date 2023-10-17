@@ -3,7 +3,6 @@ local api = vim.api
 local util = require "lspconfig.util"
 local tools = require 'quarto.tools'
 local otter = require 'otter'
-local otterkeeper = require 'otter.keeper'
 
 M.defaultConfig = {
   debug = false,
@@ -19,6 +18,12 @@ M.defaultConfig = {
     completion = {
       enabled = true,
     },
+  },
+  codeRunner = {
+    enabled = true,
+    -- TODO: make this a table of language to runner, b/c molten won't support everything yarepl or
+    -- slime does. Probably also good to have a default runner for unspecified languages.
+    method = 'molten-nvim', -- or 'yarepl' 'vim-slime'
   },
   keymap = {
     hover = 'K',
@@ -144,84 +149,5 @@ M.setup = function(opt)
   M.config = vim.tbl_deep_extend('force', M.defaultConfig, opt or {})
 
 end
-
-local function concat(ls)
-  if not (type(ls) == "table") then return ls .. '\n\n' end
-  local s = ''
-  for _, l in ipairs(ls) do
-    if l ~= '' then
-      s = s .. '\n' .. l
-    end
-  end
-  return s .. '\n'
-end
-
-local function send(lines)
-  lines = concat(lines)
-  local success, yarepl = pcall(require, 'yarepl')
-  if success then
-    yarepl._send_strings(0)
-  else
-    vim.fn['slime#send'](lines)
-    if success then
-      vim.fn.notify('Install a REPL code sending plugin to use this feature. Options are yarepl.nvim and vim-slim.')
-    end
-  end
-
-end
-
-M.quartoSend = function()
-  local lines = otterkeeper.get_language_lines_around_cursor()
-  if lines == nil then
-    print(
-      'No code chunk detected around cursor')
-    return
-  end
-  send(lines)
-end
-
-M.quartoSendAbove = function()
-  local lines = otterkeeper.get_language_lines_to_cursor(true)
-  if lines == nil then
-    print(
-      'No code chunks found for the current language, which is detected based on the current code block. Is your cursor in a code block?')
-    return
-  end
-  send(lines)
-end
-
-
-M.quartoSendBelow = function()
-  local lines = otterkeeper.get_language_lines_from_cursor(true)
-  if lines == nil then
-    print(
-      'No code chunks found for the current language, which is detected based on the current code block. Is your cursor in a code block?')
-    return
-  end
-  send(lines)
-end
-
-
-M.quartoSendAll = function()
-  local lines = otterkeeper.get_language_lines(true)
-  if lines == nil then
-    print(
-      'No code chunks found for the current language, which is detected based on the current code block. Is your cursor in a code block?')
-    return
-  end
-  send(lines)
-end
-
-M.quartoSendRange = function()
-  local lines = otterkeeper.get_language_lines_in_visual_selection(true)
-  if lines == nil then
-    print(
-      'No code chunks found for the current language, which is detected based on the current code block. Is your cursor in a code block?')
-    return
-  end
-  send(lines)
-end
-
-
 
 return M
