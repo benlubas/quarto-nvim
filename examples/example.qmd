@@ -10,6 +10,8 @@ This is some python code, in which we define a function `hello`:
 ```{python} 
 def hello():
   print("Hello")
+
+hello()
 ```
 
 ```bash

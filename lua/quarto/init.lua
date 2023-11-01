@@ -3,41 +3,7 @@ local api = vim.api
 local util = require "lspconfig.util"
 local tools = require 'quarto.tools'
 local otter = require 'otter'
-
-M.defaultConfig = {
-  debug = false,
-  closePreviewOnExit = true,
-  lspFeatures = {
-    enabled = true,
-    chunks = 'curly',
-    languages = { 'r', 'python', 'julia', 'bash', 'html' },
-    diagnostics = {
-      enabled = true,
-      triggers = { "BufWritePost" }
-    },
-    completion = {
-      enabled = true,
-    },
-  },
-  codeRunner = {
-    enabled = true,
-    -- TODO: make this a table of language to runner, b/c molten won't support everything yarepl or
-    -- slime does. Probably also good to have a default runner for unspecified languages.
-    method = 'molten-nvim', -- or 'yarepl' 'vim-slime'
-  },
-  keymap = {
-    hover = 'K',
-    definition = 'gd',
-    type_definition = 'gD',
-    rename = '<leader>lR',
-    format = '<leader>lf',
-    references = 'gr',
-    document_symbols = 'gS',
-  }
-}
-
--- use defaultConfig if not setup
-M.config = M.defaultConfig
+local cfg = require 'quarto.config'
 
 function M.quartoPreview(opts)
   opts = opts or {}
@@ -54,7 +20,7 @@ function M.quartoPreview(opts)
   else
     mode = "file"
     if vim.loop.os_uname().sysname == "Windows_NT" then
-      cmd = 'quarto preview \\"' .. buffer_path .. '\\"' .. ' ' ..  args
+      cmd = 'quarto preview \\"' .. buffer_path .. '\\"' .. ' ' .. args
     else
       cmd = 'quarto preview \'' .. buffer_path .. '\'' .. ' ' .. args
     end
@@ -78,12 +44,12 @@ function M.quartoPreview(opts)
   vim.cmd('tabprevious')
   api.nvim_buf_set_var(0, 'quartoOutputBuf', quartoOutputBuf)
 
-  if not M.config then
+  if not cfg.config then
     return
   end
 
   -- close preview terminal on exit of the quarto buffer
-  if M.config.closePreviewOnExit then
+  if cfg.config.closePreviewOnExit then
     api.nvim_create_autocmd({ "QuitPre", "WinClosed" }, {
       buffer = api.nvim_get_current_buf(),
       group = api.nvim_create_augroup("quartoPreview", {}),
@@ -123,7 +89,7 @@ end
 
 M.activate = function()
   local tsquery = nil
-  if M.config.lspFeatures.chunks == 'curly' then
+  if cfg.config.lspFeatures.chunks == 'curly' then
     tsquery = [[
       (fenced_code_block
       (info_string
@@ -139,15 +105,22 @@ M.activate = function()
 
       ]]
   end
-  otter.activate(M.config.lspFeatures.languages, M.config.lspFeatures.completion.enabled,
-    M.config.lspFeatures.diagnostics.enabled, tsquery)
+  otter.activate(cfg.config.lspFeatures.languages, cfg.config.lspFeatures.completion.enabled,
+    cfg.config.lspFeatures.diagnostics.enabled, tsquery)
 end
-
 
 -- setup
 M.setup = function(opt)
-  M.config = vim.tbl_deep_extend('force', M.defaultConfig, opt or {})
-
+  cfg.config = vim.tbl_deep_extend('force', cfg.defaultConfig, opt or {})
 end
+
+-- setup top level run functions
+local runner = require("quarto.runner")
+M.quartoSend = runner.run_cell
+M.quartoSendAbove = runner.run_above
+M.quartoSendBelow = runner.run_below
+M.quartoSendAll = runner.run_all
+M.quartoSendRange = runner.run_range
+M.quartoSendLine = runner.run_line
 
 return M
